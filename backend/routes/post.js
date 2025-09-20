@@ -1,71 +1,168 @@
 import express from "express";
-import pool from "../configure/db.js";
-import { requireAuth } from "../middleware/auth.js";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
+import pool from "../configure/db.js";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
 
-// Multer setup for file uploads
+const uploadsDir = path.join(process.cwd(), "uploads");
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+
 const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, "uploads/"),
-  filename: (_req, file, cb) => cb(null, Date.now() + path.extname(file.originalname)),
+  destination: (req, file, cb) => cb(null, uploadsDir),
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname) || ".jpg";
+    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2, 9)}${ext}`);
+  },
 });
 const upload = multer({ storage });
 
-// Create a new post (protected)
-router.post("/", requireAuth, upload.single("image"), async (req, res) => {
+function auth(req, res, next) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader) return res.status(401).json({ error: "No token" });
+  const token = authHeader.split(" ")[1];
   try {
-    const userId = req.user.id;
-    const { title, content } = req.body;
-    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
-
-    if (!title || !content) {
-      return res.status(400).json({ error: "Title and content are required" });
-    }
-
-    const result = await pool.query(
-      "INSERT INTO posts (user_id, title, content, image_url, created_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING *",
-      [userId, title, content, image_url]
-    );
-
-    res.status(201).json({ message: "Post created", post: result.rows[0] });
-  } catch (err) {
-    console.error("❌ CREATE POST ERROR:", err);
-    res.status(500).json({ error: "Database error" });
+    req.user = jwt.verify(token, process.env.JWT_SECRET);
+    next();
+  } catch {
+    res.status(401).json({ error: "Invalid token" });
   }
-});
+}
 
-// Get all posts (with user info)
-router.get("/", async (_req, res) => {
+// GET all posts
+router.get("/", async (req, res) => {
   try {
-    const result = await pool.query(
-      `SELECT posts.*, users.name, users.email 
-       FROM posts 
-       JOIN users ON posts.user_id = users.id 
-       ORDER BY posts.created_at DESC`
-    );
+    const result = await pool.query(`
+      SELECT p.*, u.name AS author,
+        (SELECT COUNT(*) FROM likes WHERE post_id = p.id) AS likes_count,
+        (SELECT COUNT(*) FROM comments WHERE post_id = p.id) AS comments_count
+      FROM posts p
+      JOIN users u ON p.author_id = u.id
+      ORDER BY p.created_at DESC
+    `);
     res.json(result.rows);
   } catch (err) {
-    console.error("❌ LIST POSTS ERROR:", err);
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: "Failed to fetch posts" });
   }
 });
 
-// Delete a post (author only)
-router.delete("/:id", requireAuth, async (req, res) => {
+// GET single post with comments
+router.get("/:id", async (req, res) => {
   try {
-    const { id } = req.params;
-    const owner = await pool.query("SELECT user_id FROM posts WHERE id = $1", [id]);
-    if (!owner.rows.length) return res.status(404).json({ error: "Post not found" });
-    if (String(owner.rows[0].user_id) !== String(req.user.id)) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-    await pool.query("DELETE FROM posts WHERE id = $1", [id]);
-    res.json({ message: "Post deleted" });
+    const postId = req.params.id;
+    const post = await pool.query(`
+      SELECT p.*, u.name AS author
+      FROM posts p
+      JOIN users u ON p.author_id = u.id
+      WHERE p.id = $1
+    `, [postId]);
+    const comments = await pool.query(`
+      SELECT c.*, u.name AS author
+      FROM comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.post_id = $1
+      ORDER BY c.created_at ASC
+    `, [postId]);
+    res.json({ ...post.rows[0], comments: comments.rows });
   } catch (err) {
-    console.error("❌ DELETE POST ERROR:", err);
-    res.status(500).json({ error: "Database error" });
+    res.status(500).json({ error: "Failed to fetch post" });
+  }
+});
+
+// CREATE post
+router.post("/", auth, upload.single("image"), async (req, res) => {
+  try {
+    const { caption } = req.body;
+    const image_url = req.file ? `/uploads/${req.file.filename}` : null;
+    const author_id = req.user.id;
+    const insert = await pool.query(
+      "INSERT INTO posts (author_id, caption, image_url, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *",
+      [author_id, caption, image_url]
+    );
+    res.status(201).json(insert.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create post" });
+  }
+});
+
+// UPDATE post
+router.put("/:id", auth, upload.single("image"), async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const check = await pool.query("SELECT * FROM posts WHERE id=$1", [postId]);
+    if (check.rowCount === 0) return res.status(404).json({ error: "Not found" });
+    if (check.rows[0].author_id !== req.user.id) return res.status(403).json({ error: "Not authorized" });
+    const { caption } = req.body;
+    const image_url = req.file ? `/uploads/${req.file.filename}` : check.rows[0].image_url;
+    const updated = await pool.query(
+      "UPDATE posts SET caption=$1, image_url=$2 WHERE id=$3 RETURNING *",
+      [caption, image_url, postId]
+    );
+    res.json(updated.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update post" });
+  }
+});
+
+// DELETE post
+router.delete("/:id", auth, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const check = await pool.query("SELECT * FROM posts WHERE id=$1", [postId]);
+    if (check.rowCount === 0) return res.status(404).json({ error: "Not found" });
+    if (check.rows[0].author_id !== req.user.id) return res.status(403).json({ error: "Not authorized" });
+    await pool.query("DELETE FROM posts WHERE id=$1", [postId]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete post" });
+  }
+});
+
+// LIKE/UNLIKE post
+router.post("/:id/likes", auth, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const userId = req.user.id;
+    const like = await pool.query("SELECT * FROM likes WHERE post_id = $1 AND user_id = $2", [postId, userId]);
+    if (like.rows.length) {
+      await pool.query("DELETE FROM likes WHERE post_id = $1 AND user_id = $2", [postId, userId]);
+      res.json({ liked: false });
+    } else {
+      await pool.query("INSERT INTO likes (post_id, user_id) VALUES ($1, $2)", [postId, userId]);
+      res.json({ liked: true });
+    }
+  } catch (err) {
+    res.status(500).json({ error: "Failed to toggle like" });
+  }
+});
+
+// ADD comment
+router.post("/:id/comments", auth, async (req, res) => {
+  try {
+    const postId = req.params.id;
+    const { content } = req.body;
+    const result = await pool.query(
+      "INSERT INTO comments (post_id, user_id, content, created_at) VALUES ($1, $2, $3, NOW()) RETURNING *",
+      [postId, req.user.id, content]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add comment" });
+  }
+});
+
+// DELETE comment
+router.delete("/:id/comments/:commentId", auth, async (req, res) => {
+  try {
+    const { id, commentId } = req.params;
+    const comment = await pool.query("SELECT * FROM comments WHERE id = $1", [commentId]);
+    if (comment.rows[0].user_id !== req.user.id) return res.status(403).json({ error: "Forbidden" });
+    await pool.query("DELETE FROM comments WHERE id = $1", [commentId]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete comment" });
   }
 });
 
