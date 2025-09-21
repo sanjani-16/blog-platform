@@ -1,0 +1,60 @@
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #1e1e1e;
+  padding: 0.5rem 1rem;
+  color: white;
+}
+
+.logo {
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.header-search {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.header-search input {
+  padding: 0.3rem 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
+.header-search button {
+  padding: 0.3rem 0.7rem;
+  border: none;
+  background: #4c5bd4;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.new-post-btn,
+.logout-btn {
+  background: #d44c4c;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.new-post-btn {
+  background: #4cd49d;
+}
+
+.new-post-btn:hover,
+.logout-btn:hover,
+.header-search button:hover {
+  opacity: 0.9;
+}

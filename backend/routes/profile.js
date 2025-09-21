@@ -4,6 +4,25 @@ import { requireAuth } from "../middleware/auth.js";
 
 const router = express.Router();
 
+
+router.put("/me", requireAuth, upload.single("profile_picture"), async (req, res) => {
+  try {
+    const { bio, name } = req.body;
+    let profile_picture;
+    if (req.file) {
+      profile_picture = `/uploads/${req.file.filename}`;
+    }
+    // Only update fields provided
+    const result = await pool.query(
+      "UPDATE users SET bio = COALESCE($1, bio), name = COALESCE($2, name), profile_picture = COALESCE($3, profile_picture) WHERE id = $4 RETURNING id, name, email, bio, profile_picture",
+      [bio, name, profile_picture, req.user.id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error("Error updating profile:", err);
+    res.status(500).json({ error: "Profile update failed" });
+  }
+});
 // Current user profile + posts
 router.get("/me", requireAuth, async (req, res) => {
   try {

@@ -1,133 +1,112 @@
-/* Home.css */
-.feed-container {
-  max-width: 600px;
-  margin: 0 auto;
-  padding: 1rem;
-}
-.post-card {
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-  margin-bottom: 1.5rem;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-}
-.post-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-.avatar {
-  background: #eee;
-  border-radius: 50%;
-  width: 40px;
-  height: 40px;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.author {
-  font-weight: bold;
-}
-.date {
-  color: #888;
-  font-size: 0.9rem;
-  margin-left: 0.5rem;
-}
-.delete-btn {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: #e00;
-  cursor: pointer;
-}
-.post-image {
-  width: 100%;
-  border-radius: 8px;
-  margin: 1rem 0;
-}
-.post-caption {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-}
-.post-actions {
-  display: flex;
-  gap: 1rem;
-}
-.like-btn, .comment-btn {
-  background: none;
-  border: none;
-  color: #333;
-  cursor: pointer;
-  font-size: 1rem;
-}
-.comments-section {
-  margin-top: 1rem;
-}
-.comment-card {
-  background: #f7f7f7;
-  border-radius: 8px;
-  padding: 0.5rem;
-  margin-bottom: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.comment-author {
-  font-weight: bold;
-  margin-right: 0.5rem;
-}
-.comment-form {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-.comment-form input {
-  flex: 1;
-  padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-}
-.comment-form button {
-  padding: 0.5rem 1rem;
-  border-radius: 8px;
-  border: none;
-  background: #007bff;
-  color: #fff;
-  cursor: pointer;
-}
-
-/* CreatePost.css */
+/* wrapper */
 .create-post-form {
   max-width: 600px;
   margin: 2rem auto;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+  background: linear-gradient(180deg, #ffffff 0%, #f9fafb 100%);
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.12), 0 2px 8px #a7f3d0;
   padding: 2rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
+  animation: fadeIn 0.4s ease-in-out;
 }
+
+@keyframes fadeIn {
+  from {opacity: 0; transform: translateY(15px);}
+  to {opacity: 1; transform: translateY(0);}
+}
+
+.form-title {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-align: center;
+  color: #4f46e5;
+}
+
+/* textarea */
 .create-post-form textarea {
-  min-height: 80px;
-  border-radius: 8px;
-  border: 1px solid #ccc;
-  padding: 0.5rem;
-  font-size: 1rem;
+  min-height: 100px;
+  border-radius: 12px;
+  border: 2px solid #e0e7ff;
+  padding: 1rem;
+  font-size: 1.1rem;
+  background: #f8fafc;
+  color: #334155;
+  outline: none;
+  box-shadow: 0 2px 8px #a7f3d0;
+  transition: border 0.2s, box-shadow 0.2s;
 }
+.create-post-form textarea:focus {
+  border-color: #6366f1;
+  box-shadow: 0 2px 12px rgba(99,102,241,0.2);
+}
+
+/* file input */
 .create-post-form input[type="file"] {
   margin-top: 0.5rem;
+  font-size: 0.95rem;
 }
-.create-post-form button {
-  align-self: flex-end;
-  padding: 0.5rem 1.5rem;
-  border-radius: 8px;
-  border: none;
-  background: #007bff;
+
+/* cropper box */
+.cropper-container {
+  width: 100%;
+  max-width: 400px;
+  margin: 1.5rem auto;
+  background: #f8fafc;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px #a7f3d0;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* crop & save button */
+.save-crop-btn {
+  background: linear-gradient(90deg, #0ea5e9 0%, #38bdf8 100%);
   color: #fff;
-  font-size: 1rem;
+  border-radius: 12px;
+  padding: 0.7rem 1.5rem;
+  font-weight: bold;
+  font-size: 1.08rem;
+  border: none;
   cursor: pointer;
+  box-shadow: 0 2px 8px #f0abfc;
+  transition: background 0.2s, transform 0.2s;
+}
+.save-crop-btn:hover {
+  background: linear-gradient(90deg, #0369a1 0%, #0ea5e9 100%);
+  transform: scale(1.08);
+}
+
+/* preview */
+.cropped-preview {
+  margin: 1rem auto;
+  text-align: center;
+}
+.cropped-preview img {
+  max-width: 320px;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px #a7f3d0;
+}
+
+/* post button */
+.post-btn {
+  align-self: flex-end;
+  padding: 0.7rem 2rem;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(90deg, #6366f1 0%, #7c3aed 100%);
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 2px 8px #a7f3d0;
+  transition: background 0.2s, transform 0.2s;
+}
+.post-btn:hover {
+  background: linear-gradient(90deg, #7c3aed 0%, #6366f1 100%);
+  transform: scale(1.08);
 }

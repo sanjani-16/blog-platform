@@ -18,7 +18,9 @@ function Navbar() {
   return (
     <nav style={styles.navbar}>
       <div style={styles.links}>
-        <span style={styles.user}>👤 {user.name || user.email}</span>
+        <Link to="/profile" style={styles.user}>
+          👤 {user.name || user.email}
+        </Link>
         <Link to="/create" style={styles.link}>
           New Post
         </Link>
@@ -32,17 +34,24 @@ function Navbar() {
 
 const styles = {
   navbar: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    width: "100vw",
+    zIndex: 100,
     display: "flex",
     justifyContent: "flex-end",
     alignItems: "center",
     background: "#282c34",
     padding: "10px 20px",
     color: "white",
+    boxShadow: "0 2px 12px rgba(99,102,241,0.12)",
   },
   links: {
     display: "flex",
     gap: "15px",
     alignItems: "center",
+    marginRight: "24px",
   },
   link: {
     color: "white",
