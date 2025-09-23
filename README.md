@@ -37,14 +37,27 @@ npm start
 
 
 ##Authentication 
-uploads/docs/authimage.png
+uploads/docs/login.png
+uploads/docs/signup.png
 
 ##home page
 uploads/docs/homepage1.png
 uploads/docs/homepage2
 
 ##createpost
-
 uploads/docs/createpost1.png
 
+##comment/like
+uploads/docs/commentlike.png
 
+##delete
+uploads/docs/delete.png
+
+##crop
+uploads/docs/cropsave.png
+
+##search
+uploads/docs/search.png
+
+##full web video
+uploads/docs/video.mp4
