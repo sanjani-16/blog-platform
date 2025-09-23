@@ -60,4 +60,4 @@ uploads/docs/cropsave.png
 uploads/docs/search.png
 
 ##full web video
-uploads/docs/video.mp4
+[uploads/docs/video.mp4](https://drive.google.com/file/d/1L0SuuH2iXkGCfuxXvsrF5SQIYcygAUCx/view?usp=sharing)
